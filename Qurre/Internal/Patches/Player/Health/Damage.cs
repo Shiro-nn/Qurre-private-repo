@@ -58,10 +58,20 @@ namespace Qurre.Internal.Patches.Player.Health
                 var doDamage = GetDamage(handler);
                 Player attacker = null;
 
-                if (handler is AttackerDamageHandler adh) attacker = adh.Attacker.Hub.GetPlayer();
-                if (attacker is null) attacker = Server.Host;
+                if (handler is AttackerDamageHandler adh)
+                    attacker = adh.Attacker.Hub.GetPlayer();
+                if (attacker is null)
+                {
+                    if (handler is ExplosionDamageHandler)
+                        return false;
+                    attacker = Server.Host;
+                }
 
                 DamageEvent ev = new(attacker, hub.GetPlayer(), handler, doDamage);
+
+                if (ev.Target is null || ev.Target.Disconnected)
+                    return true;
+
                 ev.InvokeEvent();
 
                 if (!SetDamage(handler, ev.Damage)) ev.Damage = doDamage;
